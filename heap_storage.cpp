@@ -30,9 +30,16 @@ RecordID SlottedPage::add(const Dbt* data)
   return id;
 }
 
+/*
+  Handy reference: https://web.stanford.edu/class/cs276a/projects/docs/berkeleydb/api_cxx/dbt_class.html
+*/
 Dbt* SlottedPage::get(RecordID record_id)
 {
-  u16 size = 
+  u16 size, loc;
+  get_header(size, loc, record_id);
+  if(size == 0)
+    return;
+  return new Dbt(this->address(loc), size)
 }
 
 RecordIDs* SlottedPage::ids(void)
