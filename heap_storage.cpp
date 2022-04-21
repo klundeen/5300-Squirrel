@@ -6,7 +6,7 @@ bool test_heap_storage() {return true;}
 
 /*
   Slotted Page
-  #TODO: 
+  TODO: 
     virtual void put(RecordID record_id, const Dbt &data);
     virtual void del(RecordID record_id);
     virtual void slide(u_int16_t start, u_int16_t end);
@@ -48,6 +48,15 @@ Dbt* SlottedPage::get(RecordID record_id)
   return new Dbt(this->address(loc), size)
 }
 
+void SlottedPage::del(RecordID record_id)
+{
+  u16 size, loc;
+  get_header(size, loc, record_id);
+  // Tombstoned here
+  put_header(record_id, 0, 0);
+
+}
+
 RecordIDs* SlottedPage::ids(void)
 {
   RecordIDs* ids = new RecordIDs;
@@ -87,6 +96,9 @@ bool SlottedPage::has_room(u_int16_t size)
 void SlottedPage::slide(u_int16_t start, u_int16_t end)
 {
   u16 shift = end - start;
+  if (shift == 0)
+    return;
+  
 
 }
 
