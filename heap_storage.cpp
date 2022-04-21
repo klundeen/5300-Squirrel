@@ -4,7 +4,13 @@ typedef u_int16_t u16;
 
 bool test_heap_storage() {return true;}
 
-// Slotted Page
+/*
+  Slotted Page
+  #TODO: 
+    virtual void put(RecordID record_id, const Dbt &data);
+    virtual void del(RecordID record_id);
+    virtual void slide(u_int16_t start, u_int16_t end);
+*/
 SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new = false)
 {
   if (is_new)
@@ -52,9 +58,40 @@ RecordIDs* SlottedPage::ids(void)
       ids->push_back(id);
   } 
   return ids;
+}
+
+void SlottedPage::get_header(u_int16_t &size, u_int16_t &loc, RecordID id = 0)
+{
+  size = get_n(4 * id);
+  loc = get_n(4 * id + 2);
+}
+
+// Store the size and offset for given id. For id of zero, store the block header
+void SlottedPage::put_header(RecordID id, u16 size, u16 loc)
+{
+  if (id == 0)
+  { 
+    size = this->num_records;
+    loc = this->end_free;
+  }
+  put_n(4*id, size);
+  put_n(4*id + 2, loc);
+}
+
+bool SlottedPage::has_room(u_int16_t size)
+{
+  u16 availableSpace = this->end_free - (this->num_records + 1) * 4;
+  return availableSpace >= size;
+}
+
+void SlottedPage::slide(u_int16_t start, u_int16_t end)
+{
+  u16 shift = end - start;
+
+}
 
 // Get 2-byte integer at given offset in block
-u16 SlottedPage::get_n(u16 offset)
+u_int16_t SlottedPage::get_n(u16 offset)
 {
   return *(u16*)this->address(offset);
 }
@@ -71,33 +108,11 @@ void* SlottedPage::address(u16 offset)
   return (void*)((char*)this->block.get_data() + offset);
 }
 
-void SlottedPage::get_header(u_int16_t &size, u_int16_t &loc, RecordID id = 0)
-{
-  size = get_n(4 * id);
-  loc = get_n(4 * id + 2);
-}
 
-bool SlottedPage::has_room(u_int16_t size)
-{
-  u16 availableSpace = this->end_free - (this->num_records + 1) * 4;
-  return availableSpace >= size;
-}
 
-void SlottedPage::slide(u_int16_t start, u_int16_t end)
-{
-  u16 shift = end - start;
 
-}
 
-// Store the size and offset for given id. For id of zero, store the block header
-void SlottedPage::put_header(RecordID id, u16 size, u16 loc)
-{
-  if (id == 0)
-  { 
-    size = this->num_records;
-    loc = this->end_free;
-  }
-  put_n(4*id, size);
-  put_n(4*id + 2, loc);
-}
+
+
+
 
