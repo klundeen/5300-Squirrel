@@ -9,7 +9,6 @@ bool test_heap_storage() {return true;}
   TODO: 
     virtual void put(RecordID record_id, const Dbt &data);
     virtual void del(RecordID record_id);
-    virtual void slide(u_int16_t start, u_int16_t end);
 */
 SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new = false)
 {
@@ -54,6 +53,7 @@ void SlottedPage::del(RecordID record_id)
   get_header(size, loc, record_id);
   // Tombstoned here
   put_header(record_id, 0, 0);
+  slide(loc, loc+size)
 
 }
 
@@ -95,11 +95,25 @@ bool SlottedPage::has_room(u_int16_t size)
 
 void SlottedPage::slide(u_int16_t start, u_int16_t end)
 {
+  u16 size, loc;
   u16 shift = end - start;
+  u16 itemsToMove = start - (end + 1);
   if (shift == 0)
     return;
-  
+  memcopy(this->address(shift + end_free + 1), this->address(end_free + 1), itemsToMove);
 
+  RecordIDs* currentRecord =  this->ids();
+  for(RecordID &id: *currentRecord)
+  {
+    get_header(size,loc,id);
+    if(loc <= start)
+    {
+      loc += shift;
+      this->put_header(id, size, loc)
+    }
+  }
+  this->end_free += shift;
+  this->put_header()
 }
 
 // Get 2-byte integer at given offset in block
