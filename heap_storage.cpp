@@ -112,6 +112,9 @@ void SlottedPage::slide(u_int16_t start, u_int16_t end)
       this->put_header(id, size, loc)
     }
   }
+  
+  delete currentRecord;
+
   this->end_free += shift;
   this->put_header()
 }
