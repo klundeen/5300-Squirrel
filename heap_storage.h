@@ -11,7 +11,8 @@
 
 #include "db_cxx.h"
 #include "storage_engine.h"
-
+#include "stdio.h"
+#include "stdlib.h"
 /**
  * @class SlottedPage - heap file implementation of DbBlock.
  *
