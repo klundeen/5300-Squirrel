@@ -51,7 +51,7 @@ bool test_heap_storage()
   TODO:
     virtual void put(RecordID record_id, const Dbt &data);
 */
-SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new)
+SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new):DbBlock(block, block_id, is_new)
 {
   if (is_new)
   {
