@@ -2,7 +2,6 @@
 #include <cstring>
 
 typedef u_int16_t u16;
-const char *HOME = "cpsc5300/data";
 
 DbEnv *_DB_ENV;
 
@@ -209,11 +208,9 @@ void HeapFile::db_open(uint flags)
     db.set_re_len(DbBlock::BLOCK_SZ);
 
     this->dbfilename = this->name + ".db";
-    // dbtype is DB_RECNO
     int result = db.open(NULL, this->dbfilename.c_str(), NULL, DB_RECNO, flags, 0644);
     if (result != 0)
     {
-      // if opening doesn't sucessed, we close
       this->close();
       this->closed = true;
     }
@@ -249,10 +246,14 @@ SlottedPage *HeapFile::get_new()
 
 SlottedPage *HeapFile::get(BlockID block_id)
 {
-  Dbt pair(&block_id, sizeof(block_id));
-  Dbt content;
-  this->db.get(nullptr, &pair, &content, 0);
-  return new SlottedPage(content, block_id, false);
+  if (block_id == 0)
+    return this->get_new();
+
+  Dbt key(&block_id, sizeof(block_id));
+  Dbt data;
+  this->db.get(nullptr, &key, &data, 0);
+
+  return new SlottedPage(data, block_id);
 }
 
 /*
@@ -452,9 +453,12 @@ ValueDict *HeapTable::project(Handle handle, const ColumnNames *column_names)
 
 Handle HeapTable::append(const ValueDict *row)
 {
+  std::cout << "Hello" << std::endl;
   Dbt *data = marshal(row);
+  std::cout << "Hello" << std::endl;
   SlottedPage *block = this->file.get(this->file.get_last_block_id());
-  RecordID id;
+  std::cout << "Hello" << std::endl;
+  RecordID id = 0;
   try
   {
     id = block->add(data);
@@ -465,7 +469,9 @@ Handle HeapTable::append(const ValueDict *row)
     id = block->add(data);
   }
   this->file.put(block);
-  return std::pair<BlockID, RecordID>(this->file.get_last_block_id(), id);
+  delete block;
+  delete data;
+  return std::make_pair(file.get_last_block_id(), id);
 }
 
 bool test_heap_storage()
@@ -490,19 +496,28 @@ bool test_heap_storage()
   ValueDict row;
   row["a"] = Value(12);
   row["b"] = Value("Hello!");
-  // std::cout << "try insert" << std::endl;
-  // table.insert(&row);
-  // std::cout << "insert ok" << std::endl;
+  std::cout << "try insert" << std::endl;
+  table.insert(&row);
+  std::cout << "insert ok" << std::endl;
   Handles *handles = table.select();
   std::cout << "select ok " << handles->size() << std::endl;
-  // ValueDict *result = table.project((*handles)[0]);
-  // std::cout << "project ok" << std::endl;
-  // Value value = (*result)["a"];
-  // if (value.n != 12)
-  //   return false;
-  // value = (*result)["b"];
-  // if (value.s != "Hello!")
-  //   return false;
-  // table.drop();
+  ValueDict *result = table.project((*handles)[0]);
+  std::cout << "project ok" << std::endl;
+  Value value = (*result)["a"];
+  
+  if (value.n != 12)
+  {
+    std::cout << "n failed" << std::endl;
+    return false;
+  }
+
+  value = (*result)["b"];
+  if (value.s != "Hello!")
+  {
+    std::cout << "s failed" << std::endl;
+    return false;
+  }
+
+  table.drop();
   return true;
 }
