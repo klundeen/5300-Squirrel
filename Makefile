@@ -2,6 +2,7 @@ CCFLAGS     = -std=c++11 -std=c++0x -Wall -Wno-c++11-compat -DHAVE_CXX_STDHEADER
 COURSE      = /usr/local/db6
 INCLUDE_DIR = $(COURSE)/include
 LIB_DIR     = $(COURSE)/lib
+DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))
 
 # following is a list of all the compiled object files needed to build the sql5300 executable
 OBJS       = sql5300.o heap_storage.o
@@ -15,7 +16,7 @@ sql5300.o : heap_storage.h storage_engine.h
 heap_storage.o : heap_storage.h storage_engine.h
 
 # General rule for compilation
-%.o: %.cpp
+%.o: %.cpp 
 	g++ -I$(INCLUDE_DIR) $(CCFLAGS) -o "$@" "$<"
 
 # Rule for removing all non-source files (so they can get rebuilt from scratch)

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "db_cxx.h"
+#include "heap_storage.h"
 #include "SQLParser.h"
 
 using namespace hsql;
@@ -256,59 +257,64 @@ string execute(const SQLStatement *stmt)
   }
 }
 
-int main(int argc, char *argv[])
-{
-  if (argc != 2)
+
+
+  int main(int argc, char *argv[])
   {
-    cerr << "Usage: cpsc5300: dbenvpath" << endl;
-    return 1;
-  }
-
-  char *envHome = argv[1];
-
-  cout << envHome << endl;
-
-  cout << "(sql5300: running with database environment at " << envHome << ")" << endl;
-  DbEnv env(0U);
-  env.set_message_stream(&cout);
-  env.set_error_stream(&cerr);
-  try
-  {
-    env.open(envHome, DB_CREATE | DB_INIT_MPOOL, 0);
-  }
-  catch (DbException &exc)
-  {
-    cerr << "(sql5300: " << exc.what() << ")";
-    exit(1);
-  }
-
-  // Enter the SQL shell loop
-  while (true)
-  {
-    cout << "SQL> ";
-    string query;
-    getline(cin, query);
-    if (query.length() == 0)
-      continue; // blank line -- just skip
-    if (query == "quit")
-      break; // only way to get out
-
-    // use the Hyrise sql parser to get us our AST
-    SQLParserResult *result = SQLParser::parseSQLString(query);
-    if (!result->isValid())
+    if (argc != 2)
     {
-      cout << "invalid SQL: " << query << endl;
+      cerr << "Usage: cpsc5300: dbenvpath" << endl;
+      return 1;
+    }
+
+    char *envHome = argv[1];
+
+    cout << envHome << endl;
+
+    cout << "(sql5300: running with database environment at " << envHome << ")" << endl;
+    DbEnv env(0U);
+    env.set_message_stream(&cout);
+    env.set_error_stream(&cerr);
+    try
+    {
+      env.open(envHome, DB_CREATE | DB_INIT_MPOOL, 0);
+    }
+    catch (DbException &exc)
+    {
+      cerr << "(sql5300: " << exc.what() << ")";
+      exit(1);
+    }
+
+    // Enter the SQL shell loop
+    while (true)
+    {
+      cout << "SQL> ";
+      string query;
+      getline(cin, query);
+      if (query.length() == 0)
+        continue; // blank line -- just skip
+      if (query == "quit")
+        break; // only way to get out
+      if (query == "test")
+      {
+        test_heap_storage();
+      }
+
+      // use the Hyrise sql parser to get us our AST
+      SQLParserResult *result = SQLParser::parseSQLString(query);
+      if (!result->isValid())
+      {
+        cout << "invalid SQL: " << query << endl;
+        delete result;
+        continue;
+      }
+
+      // execute the statement
+      for (uint i = 0; i < result->size(); ++i)
+      {
+        cout << execute(result->getStatement(i)) << endl;
+      }
       delete result;
-      continue;
     }
-
-    // execute the statement
-    for (uint i = 0; i < result->size(); ++i)
-    {
-      cout << execute(result->getStatement(i)) << endl;
-    }
-    delete result;
+    return EXIT_SUCCESS;
   }
-  return EXIT_SUCCESS;
-}
-
