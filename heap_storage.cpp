@@ -60,9 +60,18 @@ void SlottedPage::put(RecordID record_id, const Dbt &data)
     u16 extra = newSize - size;
     if (!this->has_room(extra))
       new DbBlockNoRoomError('Not Enough room in block!');
+    this->slide(loc + newSize, loc + size);
+    memcpy(this->address(loc - extra), data.get_data(), newSize);
   }
-  this->slide(loc + newSize, loc + size);
-  mem_copy()
+  else 
+  {
+    memcpy(this->address(loc), data.get_data(), newSize);
+    slide(loc + newSize, loc + size);
+  }
+  get_header(size, loc, record_id);
+  put_header(record_id, new_size, loc);
+
+
 }
 
 void SlottedPage::del(RecordID record_id)
@@ -129,9 +138,7 @@ void SlottedPage::slide(u_int16_t start, u_int16_t end)
       this->put_header(id, size, loc)
     }
   }
-
   delete currentRecord;
-
   this->end_free += shift;
   this->put_header()
 }
