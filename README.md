@@ -63,3 +63,7 @@ project ok
 tests passed
 SQL> quit
 ```
+
+## Walkthrough Video
+
+https://seattleu.instructuremedia.com/embed/ef844f3e-1fe1-49f4-87ca-18a575ea0719
