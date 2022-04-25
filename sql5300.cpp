@@ -3,7 +3,6 @@
  * @author Vincent Marklynn, Yu Zhong (William)
  *
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,12 +10,13 @@
 #include "heap_storage.h"
 #include "SQLParser.h"
 
+
 using namespace hsql;
 using namespace std;
 
+DbEnv *_DB_ENV;
 // forward declare
 string operatorExpressionToString(const Expr *expr);
-
 /**
  * Convert the hyrise Expr AST back into the equivalent SQL
  * @param expr expression to unparse
@@ -259,7 +259,7 @@ string execute(const SQLStatement *stmt)
 
 int main(int argc, char *argv[])
 {
-  if (argc != 2)
+   if (argc != 2)
   {
     cerr << "Usage: cpsc5300: dbenvpath" << endl;
     return 1;
@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
 
   cout << "(sql5300: running with database environment at " << envHome << ")" << endl;
   DbEnv env(0U);
+  _DB_ENV = &env;
   env.set_message_stream(&cout);
   env.set_error_stream(&cerr);
   try

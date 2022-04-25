@@ -3,8 +3,6 @@
 
 typedef u_int16_t u16;
 
-DbEnv *_DB_ENV;
-
 /*
   Slotted Page
   TODO:
@@ -27,13 +25,15 @@ SlottedPage::SlottedPage(Dbt &block, BlockID block_id, bool is_new) : DbBlock(bl
 RecordID SlottedPage::add(const Dbt *data)
 {
   if (!has_room(data->get_size()))
-    throw DbBlockNoRoomError("Not enough room for new record");
+    throw DbBlockNoRoomError("not enough room for new record");
   u16 id = ++this->num_records;
   u16 size = (u16)data->get_size();
+  this->end_free -= size;
   u16 loc = this->end_free + 1;
   put_header();
   put_header(id, size, loc);
-  memcpy(this->address(loc), data->get_data(), size);
+  // memory-to-memory copy
+  std::memcpy(this->address(loc), data->get_data(), size);
   return id;
 }
 
@@ -42,11 +42,13 @@ RecordID SlottedPage::add(const Dbt *data)
 */
 Dbt *SlottedPage::get(RecordID record_id)
 {
-  u16 size, loc;
-  get_header(size, loc, record_id);
-  if (size == 0)
-    return nullptr;
-  return new Dbt(this->address(loc), size);
+  u16 size = get_n(4 * record_id);
+  u16 loc = get_n(4 * record_id + 2);
+
+  char *data = new char[size];
+  memcpy(data, this->address(loc), size);
+
+  return new Dbt(data, size);
 }
 
 void SlottedPage::put(RecordID record_id, const Dbt &data)
@@ -337,6 +339,7 @@ Dbt *HeapTable::marshal(const ValueDict *row)
     if (ca.get_data_type() == ColumnAttribute::DataType::INT)
     {
       *(int32_t *)(bytes + offset) = value.n;
+      offset += sizeof(int32_t);
     }
     else if (ca.get_data_type() == ColumnAttribute::DataType::TEXT)
     {
@@ -453,11 +456,9 @@ ValueDict *HeapTable::project(Handle handle, const ColumnNames *column_names)
 
 Handle HeapTable::append(const ValueDict *row)
 {
-  std::cout << "Hello" << std::endl;
+
   Dbt *data = marshal(row);
-  std::cout << "Hello" << std::endl;
   SlottedPage *block = this->file.get(this->file.get_last_block_id());
-  std::cout << "Hello" << std::endl;
   RecordID id = 0;
   try
   {
@@ -492,7 +493,7 @@ bool test_heap_storage()
       << "drop ok" << std::endl;
   HeapTable table("_test_data_cpp", column_names, column_attributes);
   table.create_if_not_exists();
-  std::cout << "create_if_not_exsts ok" << std::endl;
+  std::cout << "create_if_not_exists ok" << std::endl;
   ValueDict row;
   row["a"] = Value(12);
   row["b"] = Value("Hello!");
@@ -504,20 +505,24 @@ bool test_heap_storage()
   ValueDict *result = table.project((*handles)[0]);
   std::cout << "project ok" << std::endl;
   Value value = (*result)["a"];
-  
+
   if (value.n != 12)
   {
+    std::cout << value.n << std::endl;
     std::cout << "n failed" << std::endl;
+    table.drop();
     return false;
   }
 
   value = (*result)["b"];
   if (value.s != "Hello!")
   {
+    std::cout << value.s << std::endl;
     std::cout << "s failed" << std::endl;
+    table.drop();
     return false;
   }
 
-  table.drop();
+  // table.drop();
   return true;
 }
