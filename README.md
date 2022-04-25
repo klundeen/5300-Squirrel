@@ -9,7 +9,7 @@ To run the SQL interpreter:
 
 1) Enter ```make```.
 
-2) ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel```
+2) ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel)```
 
 3) To quit, enter ```quit```.
 
@@ -44,7 +44,7 @@ To run the program,
 
 1) Enter ```make```.
 
-2) Enter the SQL Interpreter by entering ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel```.
+2) Enter the SQL Interpreter by entering ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel```).
 
 3) Enter ```test```.
 
