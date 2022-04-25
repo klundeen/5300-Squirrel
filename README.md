@@ -39,6 +39,7 @@ SQL> quit
 Milestone 2 is a simple relations manager that is built on top of ```DbBlock```, ```DbFile```, and ```DbRelation``` abstract base classes. The concrete implementations are ```SlottedPage```, ```HeapFile```, and ```HeapTable```. 
 
 **Instructions**
+
 To run the program, 
 
 1) Enter ```make```.
