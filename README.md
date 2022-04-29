@@ -1,69 +1,29 @@
-# 5300-Squirrel
+# 5300-Instructor
+Instructor's DB Relation Manager project for CPSC5300/4300 at Seattle U, Spring 2022
 
-## Milestone 1
-Milestone 1 is a SQL interpreter that accepts simple **SELECT** and **CREATE** Table queries.
+Usage (argument is database directory):
+<pre>
+$ ./sql5300 ~/cpsc5300/data
+</pre>
 
-**Instructions** 
-
-To run the SQL interpreter:
-
-1) Enter ```make```.
-
-2) ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel)```
-
-3) To quit, enter ```quit```.
-
-**Sample**
-
-```(sql5300: running with database environment at /home/st/smithj/sql5300env/data)
-SQL> create table foo (a text, b integer, c double)
-CREATE TABLE foo (a TEXT, b INT, c DOUBLE)
-SQL> select * from foo left join goober on foo.x=goober.x
-SELECT * FROM foo LEFT JOIN goober ON foo.x = goober.x
-SQL> select * from foo as f left join goober on f.x = goober.x
-SELECT * FROM foo AS f LEFT JOIN goober ON f.x = goober.x
-SQL> select * from foo as f left join goober as g on f.x = g.x
-SELECT * FROM foo AS f LEFT JOIN goober AS g ON f.x = g.x
-SQL> select a,b,g.c from foo as f, goo as g
-SELECT a, b, g.c FROM goo AS g, foo AS f
-SQL> select a,b,c from foo where foo.b > foo.c + 6
-SELECT a, b, c FROM foo WHERE foo.b > foo.c + 6
-SQL> select f.a,g.b,h.c from foo as f join goober as g on f.id = g.id where f.z >1
-SELECT f.a, g.b, h.c FROM foo AS f JOIN goober AS g ON f.id = g.id WHERE f.z > 1
-SQL> foo bar blaz
-Invalid SQL: foo bar blaz
-SQL> quit
-```
-
-## Milestone 2
-Milestone 2 is a simple relations manager that is built on top of ```DbBlock```, ```DbFile```, and ```DbRelation``` abstract base classes. The concrete implementations are ```SlottedPage```, ```HeapFile```, and ```HeapTable```. 
-
-**Instructions**
-
-To run the program, 
-
-1) Enter ```make```.
-
-2) Enter the SQL Interpreter by entering ```./sql5300 env_path (e.g. ./sql5300 ~/cpsc5300/5300-Squirrel```).
-
-3) Enter ```test```.
-
-**Sample**
-```[vmarklynn@cs1 5300-Squirrel]$ ./sql5300 ~/cpsc5300/5300-Squirrel
-/home/st/vmarklynn/cpsc5300/5300-Squirrel
-(sql5300: running with database environment at /home/st/vmarklynn/cpsc5300/5300-Squirrel)
+## Tags
+- <code>Milestone1</code> is playing around with the AST returned by the HyLine parser and general setup of the command loop.
+- <code>Milestone2h</code> has the intructor-provided files for Milestone2. (Note that heap_storage.cpp is just a stub.)
+- <code>Milestone2</code> is the instructor's attempt to complete the Milestone 2 assignment.
+- <code>Milestone3_prep</code> has the instructor-provided files for Milestone 3. The students' work is in <code>SQLExec.cpp</code> labeled with <code>FIXME</code>.
+## Unit Tests
+There are some tests for SlottedPage and HeapTable. They can be invoked from the <code>SQL</code> prompt:
+```sql
 SQL> test
-create ok
-drop ok
-create_if_not_exists ok
-try insert
-insert ok
-select ok 1
-project ok
-tests passed
-SQL> quit
+```
+Be aware that failed tests may leave garbage Berkeley DB files lingering in your data directory. If you don't care about any data in there, you are advised to just delete them all after a failed test.
+```sh
+$ rm -f data/*
 ```
 
-## Walkthrough Video
-
-https://seattleu.instructuremedia.com/embed/ef844f3e-1fe1-49f4-87ca-18a575ea0719
+## Valgrind (Linux)
+To run valgrind (files must be compiled with <code>-ggdb</code>):
+```sh
+$ valgrind --leak-check=full --suppressions=valgrind.supp ./sql5300 data
+```
+Note that we've added suppression for the known issues with the Berkeley DB library <em>vis-à-vis</em> valgrind.
