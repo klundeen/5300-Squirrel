@@ -96,13 +96,77 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
     }
 }
 
-QueryResult *SQLExec::create(const CreateStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME............. Carter will fix this
+QueryResult *SQLExec::create(const CreateStatement *statement) { //FIXME
+    if(statement->type != CreateStatement::kTable) return new QueryResult("Create type not table");
+        Identifier table_name = statement->tableName;
+        //update schema
+        ValueDict row;
+        row["table_name"] = table_name;
+        Handle table_handle = SQLExec::tables->insert(&row);
+        
+        //initialize variables for column info
+        ColumnNames column_names;
+        ColumnAttributes column_attributes;
+        Identifier column_name;
+        ColumnAttribute column_attribute;
+
+        //update for each column in the input statement
+        for(ColumnDefinition* curr_column : *statement->columns){
+            column_definition(curr_column, column_name, column_attribute);
+            column_names.push_back(column_name);
+            column_attributes.push_back(column_attribute);
+        }
+
+        try{
+            Handles column_handles;
+            DbRelation& columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+            try{
+                //insert into the column handle
+                for(uint i = 0; i < column_names.size(); ++i){
+                    row["column_name"] = column_names[i];
+                    if(column_attributes[i].get_data_type() == ColumnAttribute::INT) row["data_type"] = Value("INT");
+                    else row["data_type"] = Value("TEXT");
+                    column_handles.push_back(columns.insert(&row));
+                }
+                DbRelation& table = SQLExec::tables->get_table(table_name);
+                if(statement->ifNotExists) table.create_if_not_exists();
+                else table.create();
+            }
+            catch(...){
+                try{
+                    for(uint i = 0; i < column_names.size(); ++i) columns.del(column_handles.at(i));
+                }
+                catch(...){throw; }
+            }
+        }
+        catch(...){
+            try{
+                SQLExec::tables->del(table_handle);
+            }
+            catch(...){throw; }
+        }
+    return new QueryResult("created" + table_name);
 }
 
-// DROP ...
-QueryResult *SQLExec::drop(const DropStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME.............Carter will fix this
+QueryResult *SQLExec::drop(const DropStatement *statement) { //FIXME
+    if(statement->type != hsql::DropStatement::kTable) return new QueryResult("Drop type not table");
+    Identifier table_name = statement->name;
+    ValueDict where;
+    where["table_name"] = Value(table_name);
+
+    if (Value(statement->name) == Tables::TABLE_NAME || Value(statement->name) == Columns::TABLE_NAME)
+        return new QueryResult("Can not drop a schema table");
+
+    DbRelation& table = SQLExec::tables->get_table(table_name);
+    DbRelation& column = SQLExec::tables->get_table(Columns::TABLE_NAME);
+
+    Handles* column_handles = column.select(&where);
+    for(uint i = 0; i < column_handles->size(); ++i) column.del(column_handles->at(i));
+    delete column_handles;
+    table.drop();
+    SQLExec::tables->del(*SQLExec::tables->select(&where)->begin());
+
+    return new QueryResult("dropped" + table_name); 
 }
 
 QueryResult *SQLExec::show(const ShowStatement *statement) {
