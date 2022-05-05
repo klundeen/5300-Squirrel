@@ -89,8 +89,8 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
             column_attribute.set_data_type(ColumnAttribute::INT);
         case ColumnDefinition::TEXT:
             column_attribute.set_data_type(ColumnAttribute::TEXT);
-
-    throw SQLExecError("not implemented");
+        default :
+            throw SQLExecError("invalid Column type");
     
         
     }
