@@ -83,7 +83,17 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
 
 void
 SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name, ColumnAttribute &column_attribute) {
-    throw SQLExecError("not implemented");  // FIXME ............. Vindhya will fix this
+    column_name=col->name;
+    switch(col->type){
+        case ColumnDefinition::INT:
+            column_attribute.set_data_type(ColumnAttribute::INT);
+        case ColumnDefinition::TEXT:
+            column_attribute.set_data_type(ColumnAttribute::TEXT);
+
+    throw SQLExecError("not implemented");
+    
+        
+    }
 }
 
 QueryResult *SQLExec::create(const CreateStatement *statement) {
@@ -109,7 +119,7 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
 }
 
 QueryResult *SQLExec::show_tables() {
-    // Initializing variables for system two tables  _tables and _columns.......... Vindhya fixed this
+    // Initializing variables for system two tables  _tables and _columns
     ColumnNames* column_names = new ColumnNames();
     column_names->push_back("table_name");
     ColumnAttributes* column_attributes = new ColumnAttributes();
@@ -118,7 +128,7 @@ QueryResult *SQLExec::show_tables() {
 
 
     Handles* handles = SQLExec::tables->select();
-    int size=handles->size();
+    int size=handles->size()-2;
     ValueDicts *value_dict= new ValueDicts();
     
 
@@ -133,18 +143,56 @@ QueryResult *SQLExec::show_tables() {
         }    
 
     }
-    cout<<handles;
+    cout<<handles<<"\n";
     delete handles;
     return new QueryResult(column_names,column_attributes,value_dict,"successfully returned "+to_string(size)+" rows");
 }
-
+// This is the function to store column name and column data types and also returns the number of rows in system table _column 
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
+    DbRelation& columns= SQLExec::tables->get_table(Columns::TABLE_NAME);
     ColumnNames* column_names = new ColumnNames();
     column_names->push_back("table_name");
     column_names->push_back("column_name");
-    column_names->push_back("datatype");
-    // FIXME-------------- Need to implement remaining logic.......... Vindhya will fix this
+    column_names->push_back("data_type");
+    ColumnAttributes* column_attributes = new ColumnAttributes();
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
 
-    return new QueryResult("not implemented"); 
+    ValueDict where;
+    where["table_name"]=Value(statement->tableName);
+    Handles* handles= columns.select(&where);
+    int size=handles->size();
+    ValueDicts* rows = new ValueDicts;
+    for(auto const &handle : *handles){
+        ValueDict* row = columns.project(handle, column_names);
+        rows->push_back(row);
+
+    }
+    delete handles;
+
+
+    return new QueryResult(column_names,column_attributes,rows,"successfully returned " +to_string(size)+" rows"); 
 }
 
+//Progress of test is_copy_assignableSQL> show tables
+// Got these
+// SHOW TABLES
+// 0x168e6c0
+// table_name 
+// +----------+
+// successfully returned 0 rows
+// SQL> show columns from _tables
+// SHOW COLUMNS FROM _tables
+// table_name column_name data_type 
+// +----------+----------+----------+
+// "_tables" "table_name" "TEXT" 
+// successfully returned 1 rows
+// SQL> show columns from _columns
+// SHOW COLUMNS FROM _columns
+// table_name column_name data_type 
+// +----------+----------+----------+
+// "_columns" "table_name" "TEXT" 
+// "_columns" "column_name" "TEXT" 
+// "_columns" "data_type" "TEXT" 
+// successfully returned 3 rows
+
+// Implementation and create and drop is remaining so that other test cases can also be executed
