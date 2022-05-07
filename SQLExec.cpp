@@ -334,4 +334,4 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement)
 // table_name column_name data_type 
 // +----------+----------+----------+
 // successfully returned 0 rows
-// SQL> quit
+// 
