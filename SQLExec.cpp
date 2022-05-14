@@ -14,32 +14,29 @@ using namespace hsql;
 Tables *SQLExec::tables = nullptr;
 
 // make query result be printable
-ostream &operator<<(ostream &out, const QueryResult &qres)
-{
-    if (qres.column_names != nullptr)
-    {
-        for (auto const &column_name : *qres.column_names)
+ostream &operator<<(ostream &out, const QueryResult &qres) {
+    if (qres.column_names != nullptr) {
+        for (auto const &column_name: *qres.column_names)
             out << column_name << " ";
-        out << endl
-            << "+";
+        out << endl << "+";
         for (unsigned int i = 0; i < qres.column_names->size(); i++)
             out << "----------+";
         out << endl;
-        for (auto const &row : *qres.rows)
-        {
-            for (auto const &column_name : *qres.column_names)
-            {
+        for (auto const &row: *qres.rows) {
+            for (auto const &column_name: *qres.column_names) {
                 Value value = row->at(column_name);
-                switch (value.data_type)
-                {
-                case ColumnAttribute::INT:
-                    out << value.n;
-                    break;
-                case ColumnAttribute::TEXT:
-                    out << "\"" << value.s << "\"";
-                    break;
-                default:
-                    out << "???";
+                switch (value.data_type) {
+                    case ColumnAttribute::INT:
+                        out << value.n;
+                        break;
+                    case ColumnAttribute::TEXT:
+                        out << "\"" << value.s << "\"";
+                        break;
+                    case ColumnAttribute::BOOLEAN:
+                        out << (value.n == 0 ? "false" : "true");
+                        break;
+                    default:
+                        out << "???";
                 }
                 out << " ";
             }
@@ -62,7 +59,7 @@ QueryResult::~QueryResult()
         for (auto row : *rows)
             delete row;
         delete rows;
-    }
+}
 }
 
 QueryResult *SQLExec::execute(const SQLStatement *statement)
@@ -75,14 +72,14 @@ QueryResult *SQLExec::execute(const SQLStatement *statement)
     {
         switch (statement->type())
         {
-        case kStmtCreate:
-            return create((const CreateStatement *)statement);
-        case kStmtDrop:
-            return drop((const DropStatement *)statement);
-        case kStmtShow:
-            return show((const ShowStatement *)statement);
-        default:
-            return new QueryResult("not implemented");
+            case kStmtCreate:
+                return create((const CreateStatement *) statement);
+            case kStmtDrop:
+                return drop((const DropStatement *) statement);
+            case kStmtShow:
+                return show((const ShowStatement *) statement);
+            default:
+                return new QueryResult("not implemented");
         }
     }
     catch (DbRelationError &e)
@@ -111,26 +108,23 @@ QueryResult *SQLExec::create(const CreateStatement *statement)
 {
     if (statement->type != CreateStatement::kTable)
         return new QueryResult("Create type not table");
-
     Identifier table_name = statement->tableName;
     // update schema
     ValueDict row;
     row["table_name"] = table_name;
     Handle table_handle = SQLExec::tables->insert(&row);
-
     // initialize variables for column info
     ColumnNames column_names;
     ColumnAttributes column_attributes;
     Identifier column_name;
     ColumnAttribute column_attribute;
-
     // update for each column in the input statement
     for (ColumnDefinition *curr_column : *statement->columns)
     {
         column_definition(curr_column, column_name, column_attribute);
         column_names.push_back(column_name);
         column_attributes.push_back(column_attribute);
-    }
+}
 
     try
     {
@@ -188,26 +182,19 @@ QueryResult *SQLExec::drop(const DropStatement *statement)
     Identifier table_name = statement->name;
     ValueDict where;
     where["table_name"] = Value(table_name);
-
     // Checking if the table is a schema table
-
     if (Value(statement->name) == Tables::TABLE_NAME || Value(statement->name) == Columns::TABLE_NAME)
         return new QueryResult("Can not drop a schema table");
-
     DbRelation &table = SQLExec::tables->get_table(table_name);
     DbRelation &column = SQLExec::tables->get_table(Columns::TABLE_NAME);
-
     // removing from _column
-
     Handles *column_handles = column.select(&where);
     for (uint i = 0; i < column_handles->size(); ++i)
         column.del(column_handles->at(i));
     delete column_handles;
-
     // removing from _tables
     table.drop();
     SQLExec::tables->del(*SQLExec::tables->select(&where)->begin());
-
     return new QueryResult("dropped  " + table_name);
 }
 
@@ -223,7 +210,6 @@ QueryResult *SQLExec::show(const ShowStatement *statement)
     }
     return new QueryResult("not implemented");
 }
-
 QueryResult *SQLExec::show_tables()
 {
     // Initializing variables for system two tables  _tables and _columns
@@ -231,11 +217,9 @@ QueryResult *SQLExec::show_tables()
     column_names->push_back("table_name");
     ColumnAttributes *column_attributes = new ColumnAttributes();
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
-
     Handles *handles = SQLExec::tables->select();
     int size = handles->size() - 2;
     ValueDicts *value_dict = new ValueDicts();
-
     for (auto const &handle : *handles)
     {
         ValueDict *row = SQLExec::tables->project(handle, column_names);
@@ -244,7 +228,8 @@ QueryResult *SQLExec::show_tables()
         if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME)
         {
             value_dict->push_back(row);
-        }
+}
+
     }
     // cout<<handles<<"\n";
     delete handles;
@@ -260,7 +245,6 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement)
     column_names->push_back("data_type");
     ColumnAttributes *column_attributes = new ColumnAttributes();
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
-
     ValueDict where;
     where["table_name"] = Value(statement->tableName);
     Handles *handles = columns.select(&where);
@@ -272,8 +256,15 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement)
         rows->push_back(row);
     }
     delete handles;
-
     return new QueryResult(column_names, column_attributes, rows, "successfully returned " + to_string(size) + " rows");
+}
+
+QueryResult *SQLExec::show_index(const ShowStatement *statement) {
+     return new QueryResult("show index not implemented"); // Vindhya will fix
+}
+
+QueryResult *SQLExec::drop_index(const DropStatement *statement) {
+    return new QueryResult("drop index not implemented");  // Carter will fix
 }
 
 //All these test cases are passing, which was required for MileStone3
