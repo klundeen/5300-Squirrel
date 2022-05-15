@@ -12,6 +12,7 @@ using namespace hsql;
 
 // define static data
 Tables *SQLExec::tables = nullptr;
+Indices *SQLExec::indices = nullptr;
 
 // make query result be printable
 ostream &operator<<(ostream &out, const QueryResult &qres) {
@@ -67,6 +68,10 @@ QueryResult *SQLExec::execute(const SQLStatement *statement)
     // initialize _tables table, if not yet present
     if (SQLExec::tables == nullptr)
         SQLExec::tables = new Tables();
+    
+    // initialize _indices table which will have details about index, if not yet present
+    if (SQLExec::indices== nullptr)
+        SQLExec::indices = new Indices();
 
     try
     {
@@ -105,6 +110,20 @@ void SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_
 }
 
 QueryResult *SQLExec::create(const CreateStatement *statement)
+{
+    switch (statement->type)
+    {
+    case CreateStatement::kTable:
+        return create_table(statement);
+    case CreateStatement::kIndex:
+        return create_index(statement);
+    default :
+        return new QueryResult("Create type not recognised");
+    }
+}
+
+// Case for Create Table Statement
+QueryResult *SQLExec::create_table(const CreateStatement *statement)
 {
     if (statement->type != CreateStatement::kTable)
         return new QueryResult("Create type not table");
@@ -175,6 +194,65 @@ QueryResult *SQLExec::create(const CreateStatement *statement)
     return new QueryResult("created " + table_name);
 }
 
+// We'll use the following columns in _indices to create index for specified table:
+
+// table_name - Name of the table which is indexed with this index
+// index_name - Name of the index
+// seq_in_index - Order of columns in a composite index
+// column_name - Name of the column
+// index_type - Either "BTREE" or "HASH"
+// is_unique - True if the rows in the underlying relation are unique on this index's key, false otherwise. For now, we will assume true if USING BTREE and false if USING HASH.
+
+QueryResult *SQLExec::create_index(const CreateStatement *statement)
+{
+    Identifier indexName = statement->indexName;
+    Identifier tableName = statement->tableName;
+
+    DbRelation& table = SQLExec::tables->get_table(tableName);
+    const ColumnNames& table_columns = table.get_column_names();
+    for(auto const& col_name: *statement->indexColumns){
+        if(find(table_columns.begin(),table_columns.end(),col_name)==table_columns.end()){
+            throw SQLExecError(string("column '"+string(col_name)+"' does not exist"));
+        }
+    }
+
+
+    // insert a row for every column mentioned in above comments, they are basically columns in index which we insert into  _indices
+    ValueDict row;
+    row["table_name"] = Value(tableName);
+    row["index_name"] = Value(indexName);
+    row["index_type"] = Value(statement->indexType);
+    row["is_unique"] = Value(string(statement->indexType) == "BTREE");
+    int sq_in_index = 0;
+    Handles handles;
+    try
+    {
+        // To get the column_name
+        for (auto const &col_name : *statement->indexColumns)
+        {
+            row["seq_in_index"] = Value(++sq_in_index);
+            row["column_name"] = Value(col_name);
+            handles.push_back(SQLExec::indices->insert(&row));
+        }
+        // Creating Index
+        DbIndex &index = SQLExec::indices->get_index(tableName, indexName);
+        index.create();
+    }
+    catch (...)
+    {
+        try
+        {
+            for (auto const &handle : handles)
+                SQLExec::indices->del(handle);
+        }
+        catch (...)
+        {
+        }
+        throw;
+    }
+    return new QueryResult("created index "+ indexName);
+}
+
 QueryResult *SQLExec::drop(const DropStatement *statement)
 {
     if (statement->type != hsql::DropStatement::kTable)
@@ -207,12 +285,14 @@ QueryResult *SQLExec::show(const ShowStatement *statement)
         return show_tables();
     case ShowStatement::kColumns:
         return show_columns(statement);
+    case ShowStatement::kIndex:
+            return show_index(statement);
     }
     return new QueryResult("not implemented");
 }
 QueryResult *SQLExec::show_tables()
 {
-    // Initializing variables for system two tables  _tables and _columns
+    // Initializing variables for two system tables  _tables and _columns
     ColumnNames *column_names = new ColumnNames();
     column_names->push_back("table_name");
     ColumnAttributes *column_attributes = new ColumnAttributes();
@@ -228,7 +308,7 @@ QueryResult *SQLExec::show_tables()
         if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME)
         {
             value_dict->push_back(row);
-}
+        }
 
     }
     // cout<<handles<<"\n";
@@ -260,8 +340,33 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement)
 }
 
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {
-     return new QueryResult("show index not implemented"); // Vindhya will fix
-}
+    
+    // Same process as we did for show tables, only difference is here we are do for index too.
+    ColumnNames *column_names = new ColumnNames();
+    column_names->push_back("table_name");
+    column_names->push_back("index_name");
+    column_names->push_back("column_name");
+    column_names->push_back("seq_in_index");
+    column_names->push_back("index_type");
+    column_names->push_back("is_unique");
+
+    ColumnAttributes *column_attributes = new ColumnAttributes();
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+
+    ValueDict where;
+    where["table_name"]=Value(statement->tableName);
+    Handles* handles = SQLExec::indices->select(&where);
+    u_long size = handles->size();
+    ValueDicts *value_dict = new ValueDicts;
+    for (auto const &handle : *handles)
+    {
+        ValueDict *row = SQLExec::indices->project(handle, column_names);
+        value_dict->push_back(row);
+        }
+    // cout<<handles<<"\n";
+    delete handles;
+    return new QueryResult(column_names, column_attributes, value_dict, "successfully returned " + to_string(size) + " rows");
+ }
 
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     return new QueryResult("drop index not implemented");  // Carter will fix
