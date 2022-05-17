@@ -5,6 +5,10 @@ Usage (argument is database directory):
 ```
 $ ./sql5300 ~/cpsc5300/data
 ```
+Valgrind:
+```
+valgrind --leak-check=full --suppressions=valgrind.supp ./sql5300 data
+```
 
 ## <span style="color:orange">Otoño Sprint </span>
 <b> Authors : Vindhya Nair Lolakumari Jayachandran, Carter Martin</b>
