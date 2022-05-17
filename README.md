@@ -5,10 +5,13 @@ Usage (argument is database directory):
 ```
 $ ./sql5300 ~/cpsc5300/data
 ```
-Valgrind:
-```
-valgrind --leak-check=full --suppressions=valgrind.supp ./sql5300 data
-```
+
+### Tags :
+<code>Milestone1</code> is playing around with the AST returned by the HyLine parser and general setup of the command loop.<br>
+<code>Milestone2</code> is to implement a rudimentary storage engine.<br>
+<code>Milestone3</code> is to implement create table, drop table, show tables and show columns.<br>
+<code>Milestone4</code> is to implement functions to create index, show index, and drop index.<br>
+
 
 ## <span style="color:orange">Otoño Sprint </span>
 <b> Authors : Vindhya Nair Lolakumari Jayachandran, Carter Martin</b>
@@ -125,6 +128,12 @@ Milestone 4 creates the framework for future implementation of of SQL indexing. 
     DROP INDEX fx FROM goober
     dropped index fx  
     ```
-
-
+***
+### <b>Memory Leaks</b><br/>
+To check for memory leaks, Valgrind was used. Note that we have added suppression for the known issues with the Berkely DB library vis-à-vis valgrind.<br>
+Valgrind Syntax (Linux):
+```
+$ valgrind --leak-check=full --suppressions=valgrind.supp ./sql5300 data
+```
+*Files must be compiled with -ggdb*
 
