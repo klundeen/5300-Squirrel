@@ -252,8 +252,20 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement)
     }
     return new QueryResult("created index "+ indexName);
 }
-
 QueryResult *SQLExec::drop(const DropStatement *statement)
+{
+    switch (statement->type)
+    {
+        case DropStatement::kTable:
+            return drop_table(statement);
+        case DropStatement::kIndex:
+            return drop_index(statement);
+        default:
+            return new QueryResult("Invalid drop type");
+    }
+
+}
+QueryResult *SQLExec::drop_table(const DropStatement *statement)
 {
     if (statement->type != hsql::DropStatement::kTable)
         return new QueryResult("Drop type not table");
@@ -298,18 +310,19 @@ QueryResult *SQLExec::show_tables()
     ColumnAttributes *column_attributes = new ColumnAttributes();
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
     Handles *handles = SQLExec::tables->select();
-    int size = handles->size() - 2;
+    int size = handles->size() - 3;
     ValueDicts *value_dict = new ValueDicts();
     for (auto const &handle : *handles)
     {
         ValueDict *row = SQLExec::tables->project(handle, column_names);
         Identifier table_name = row->at("table_name").s;
         // Check if already tablename is present in schema table
-        if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME)
+        if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME 
+        &&  table_name != Indices::TABLE_NAME)
         {
             value_dict->push_back(row);
         }
-
+    
     }
     // cout<<handles<<"\n";
     delete handles;
@@ -372,6 +385,7 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     Identifier table_name = statement->name;
     Identifier index_name = statement->indexName;
     DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+    index.drop();
 
     ValueDict where;
     where["table_name"] = Value(table_name);
@@ -382,7 +396,7 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     }
     delete handles;
     
-    index.drop();
+    
     
     return new QueryResult("dropped index " + index_name);
 }
@@ -446,3 +460,88 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
 // +----------+----------+----------+
 // successfully returned 0 rows
 // 
+
+
+
+// After MileStone 4 we are able to pass below test cases
+// SQL> show tables
+// SHOW TABLES
+// table_name 
+// +----------+
+// successfully returned 0 rows
+// SQL> create table goober (x integer, y integer, z integer)
+// CREATE TABLE goober (x INT, y INT, z INT)
+// created goober
+// SQL>  show columns from goober
+// SHOW COLUMNS FROM goober
+// table_name column_name data_type 
+// +----------+----------+----------+
+// "goober" "x" "INT" 
+// "goober" "y" "INT" 
+// "goober" "z" "INT" 
+// successfully returned 3 rows
+// SQL> create index fx on goober (x,y)
+// CREATE INDEX fx ON goober USING BTREE (x, y)
+// created index fx
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// "goober" "fx" "x" 1 "BTREE" true 
+// "goober" "fx" "y" 2 "BTREE" true 
+// successfully returned 2 rows
+// SQL> drop index fx from goober
+// DROP INDEX fx FROM goober
+// dropped index fx
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// successfully returned 0 rows
+// SQL> create index fx on goober (x)
+// CREATE INDEX fx ON goober USING BTREE (x)
+// created index fx
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// "goober" "fx" "x" 1 "BTREE" true 
+// successfully returned 1 rows
+// SQL> create index fx on goober (y,z)
+// CREATE INDEX fx ON goober USING BTREE (y, z)
+// Error: DbRelationError: duplicate index goober fx
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// "goober" "fx" "x" 1 "BTREE" true 
+// successfully returned 1 rows
+// SQL> create index fyz on goober (y,z)
+// CREATE INDEX fyz ON goober USING BTREE (y, z)
+// created index fyz
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// "goober" "fx" "x" 1 "BTREE" true 
+// "goober" "fyz" "y" 1 "BTREE" true 
+// "goober" "fyz" "z" 2 "BTREE" true 
+// successfully returned 3 rows
+// SQL> drop index fx from goober
+// DROP INDEX fx FROM goober
+// dropped index fx
+// SQL> show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// "goober" "fyz" "y" 1 "BTREE" true 
+// "goober" "fyz" "z" 2 "BTREE" true 
+// successfully returned 2 rows
+// SQL> drop index fyz from goober
+// DROP INDEX fyz FROM goober
+// dropped index fyz
+// SQL>  show index from goober
+// SHOW INDEX FROM goober
+// table_name index_name column_name seq_in_index index_type is_unique 
+// +----------+----------+----------+----------+----------+----------+
+// successfully returned 0 rows

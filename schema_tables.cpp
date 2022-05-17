@@ -105,13 +105,13 @@ void Tables::del(Handle handle) {
     // remove from cache, if there
     ValueDict *row = project(handle);
     Identifier table_name = row->at("table_name").s;
-    delete row;
+    
     if (Tables::table_cache.find(table_name) != Tables::table_cache.end()) {
         DbRelation *table = Tables::table_cache.at(table_name);
         Tables::table_cache.erase(table_name);
         delete table;
     }
-
+    delete row;
     HeapTable::del(handle);
 }
 

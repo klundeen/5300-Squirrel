@@ -85,6 +85,7 @@ protected:
     static QueryResult *show_index(const hsql::ShowStatement *statement);
     static QueryResult *create_index(const hsql::CreateStatement *statement);
     static QueryResult *create_table(const hsql::CreateStatement *statement);
+    static QueryResult *drop_table(const hsql::DropStatement *statement);
 
     /**
      * Pull out column name and attributes from AST's column definition clause
