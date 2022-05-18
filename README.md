@@ -138,5 +138,6 @@ $ valgrind --leak-check=full --suppressions=valgrind.supp ./sql5300 data
 *Files must be compiled with -ggdb*
 
 ### <b>Handoff Video </b><br/>
+
 https://seattleu.instructuremedia.com/embed/dbddedd8-82a3-4840-a78c-5c4ac44c8382
 
