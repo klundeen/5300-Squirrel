@@ -65,14 +65,22 @@ public:
     static QueryResult *execute(const hsql::SQLStatement *statement);
 
 protected:
-    // the one place in the system that holds the _tables and _indices tables
+    // the one place in the system that holds the _tables table and _indices table
     static Tables *tables;
     static Indices *indices;
 
     // recursive decent into the AST
     static QueryResult *create(const hsql::CreateStatement *statement);
 
+    static QueryResult *create_table(const hsql::CreateStatement *statement);
+
+    static QueryResult *create_index(const hsql::CreateStatement *statement);
+
     static QueryResult *drop(const hsql::DropStatement *statement);
+
+    static QueryResult *drop_table(const hsql::DropStatement *statement);
+
+    static QueryResult *drop_index(const hsql::DropStatement *statement);
 
     static QueryResult *show(const hsql::ShowStatement *statement);
 
@@ -80,12 +88,13 @@ protected:
 
     static QueryResult *show_columns(const hsql::ShowStatement *statement);
 
-    static QueryResult *drop_index(const hsql::DropStatement *statement);
-
     static QueryResult *show_index(const hsql::ShowStatement *statement);
-    static QueryResult *create_index(const hsql::CreateStatement *statement);
-    static QueryResult *create_table(const hsql::CreateStatement *statement);
-    static QueryResult *drop_table(const hsql::DropStatement *statement);
+
+    static QueryResult *insert(const hsql::InsertStatement *statement);
+
+    static QueryResult *del(const hsql::DeleteStatement *statement);
+
+    static QueryResult *select(const hsql::SelectStatement *statement);
 
     /**
      * Pull out column name and attributes from AST's column definition clause

@@ -105,13 +105,13 @@ void Tables::del(Handle handle) {
     // remove from cache, if there
     ValueDict *row = project(handle);
     Identifier table_name = row->at("table_name").s;
-    
+    delete row;
     if (Tables::table_cache.find(table_name) != Tables::table_cache.end()) {
         DbRelation *table = Tables::table_cache.at(table_name);
         Tables::table_cache.erase(table_name);
         delete table;
     }
-    delete row;
+
     HeapTable::del(handle);
 }
 
@@ -329,6 +329,7 @@ void Indices::del(Handle handle) {
     ValueDict *row = project(handle);
     Identifier table_name = row->at("table_name").s;
     Identifier index_name = row->at("index_name").s;
+    delete row;
     std::pair<Identifier, Identifier> cache_key(table_name, index_name);
     if (Indices::index_cache.find(cache_key) != Indices::index_cache.end()) {
         DbIndex *index = Indices::index_cache.at(cache_key);
