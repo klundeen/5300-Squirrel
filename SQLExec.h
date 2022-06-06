@@ -96,8 +96,8 @@ protected:
 
     static QueryResult *select(const hsql::SelectStatement *statement);
     
-    static ValueDict *get_where_conjunction(const hsql::Expr *parseWhere, const ColumnNames *columnNames);
-
+    static ValueDict* get_where_conjunction(const hsql::Expr *expr);
+    
     /**
      * Pull out column name and attributes from AST's column definition clause
      * @param col                AST column definition
@@ -106,7 +106,6 @@ protected:
      */
     static void
     column_definition(const hsql::ColumnDefinition *col, Identifier &column_name, ColumnAttribute &column_attribute);
-    
-    static ValueDict* get_where_conjunction(const hsql::Expr *expr);
+   
 };
 
