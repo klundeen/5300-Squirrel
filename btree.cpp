@@ -76,7 +76,7 @@ Handles *BTreeIndex::lookup(ValueDict *key_dict) const {
 
 Handles *BTreeIndex::range(ValueDict *min_key, ValueDict *max_key) const {
     throw DbRelationError("Don't know how to do a range query on Btree index yet");
-    // FIXME
+    // Implementation not required for Milestone 6
 }
 
 // Insert a row with the given handle. Row must exist in relation already.
@@ -117,7 +117,7 @@ Insertion BTreeIndex::_insert(BTreeNode *node, uint height, const KeyValue *key,
 
 void BTreeIndex::del(Handle handle) {
     throw DbRelationError("Don't know how to delete from a BTree index yet");
-    // FIXME
+    // Implementation not required for Milestone 6
 }
 
 KeyValue *BTreeIndex::tkey(const ValueDict *key) const {
