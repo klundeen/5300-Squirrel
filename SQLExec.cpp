@@ -388,8 +388,11 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     } catch (...) {
         // attempt to remove from _indices
         try {  // if any exception happens in the reversal below, we still want to re-throw the original ex
-            for (auto const &handle: i_handles)
+            for (auto const &handle: i_handles){
+                DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+                index.drop();
                 SQLExec::indices->del(handle);
+                }
         } catch (...) {}
         throw;  // re-throw the original exception (which should give the client some clue as to why it did
     }
