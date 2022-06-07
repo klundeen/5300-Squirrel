@@ -190,8 +190,11 @@ QueryResult *SQLExec::insert(const InsertStatement *statement) {
         DbIndex& index = SQLExec:: indices->get_index(table_name,ind_name);
         index.insert(handle);
     }
-
-    return new QueryResult("successfully inserted 1 row into " + table_name + " and " + to_string(index_names.size()) + " indices"); 
+    if(index_names.size()!=0){
+        return new QueryResult("successfully inserted 1 row into " + table_name + " and " + to_string(index_names.size()) + " indices"); 
+    }
+    else{
+        return new QueryResult("successfully inserted 1 row into " + table_name);
 }
 
 QueryResult *SQLExec::del(const DeleteStatement *statement) {
@@ -222,7 +225,7 @@ QueryResult *SQLExec::del(const DeleteStatement *statement) {
         rows++;
     }
     delete handles;
-    return new QueryResult("successful deleted " + to_string(rows) + " rows from " + table_name + " " + to_string(indices) + " indices"); 
+    return new QueryResult("successful deleted " + to_string(rows) + " rows from " + table_name); 
 }
 
 QueryResult *SQLExec::select(const SelectStatement *statement) {
