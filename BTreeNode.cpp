@@ -464,8 +464,8 @@ Insertion BTreeLeaf::insert(const KeyValue *key, Handle handle) {
             }
             i++;
         }
-        cout << "splitting leaf " << id << ", new sibling " << nleaf->id; // DEBUG
-        cout << " starting at value " << boundary[0] << endl; // DEBUG
+        //cout << "splitting leaf " << id << ", new sibling " << nleaf->id; // DEBUG
+        //cout << " starting at value " << boundary[0] << endl; // DEBUG
 
         nleaf->save();
         this->save();
