@@ -195,6 +195,7 @@ QueryResult *SQLExec::insert(const InsertStatement *statement) {
     }
     else{
         return new QueryResult("successfully inserted 1 row into " + table_name);
+    }
 }
 
 QueryResult *SQLExec::del(const DeleteStatement *statement) {
